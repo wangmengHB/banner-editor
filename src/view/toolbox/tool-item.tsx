@@ -59,15 +59,14 @@ export default class ToolItem extends React.Component<any, any> {
   }
 
 
-
   render() {
     const { shape } = this.props;
-    const { type, name, stroke } = shape;
+    const { toolType, name, stroke } = shape;
 
     let iconType;
-    if (type === TYPE_IMAGE_BOX) {
+    if (toolType === TYPE_IMAGE_BOX) {
       iconType = 'picture';
-    } else if (type === TYPE_TEXT_BOX) {
+    } else if (toolType === TYPE_TEXT_BOX) {
       iconType = 'font-colors';
     }
 

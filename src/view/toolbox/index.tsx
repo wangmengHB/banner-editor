@@ -29,7 +29,7 @@ export default class Toolbox extends React.Component<ToolboxProps>{
         <div className={styles['title']}>工具箱</div>
         <div className={styles['toolbox']}>
           {
-            TOOL_LIST.map((shape, index) => <ToolItem shape={shape} key={shape.type || index} />)
+            TOOL_LIST.map((shape, index) => <ToolItem shape={shape} key={shape.toolType || index} />)
           }  
         </div>
       </div>

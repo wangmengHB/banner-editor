@@ -1,13 +1,18 @@
 import { fabric } from 'fabric';
-import { INIT_WIDTH, INIT_HEIGHT, CANVAS_PADDING, TEMPLATE_TYPE_NORMAL, TEMPLATE_TYPE_TEMPLATE } from '../const';
+import { 
+  INIT_WIDTH, INIT_HEIGHT, CANVAS_PADDING, TEMPLATE_TYPE_NORMAL,  
+  TYPE_IMAGE_BOX, TYPE_TEXT_BOX,
+} from '../const';
 import { getCoordinates } from 'web-util-kit'
 import { generateUuid } from 'util-kit'
+
 
 const LINE_WIDTH = 4;
 
 fabric.Object.prototype.transparentCorners = false;
 fabric.Object.prototype.padding = 2;
 fabric.Object.prototype.strokeWidth = LINE_WIDTH;
+fabric.Object.prototype.cornerStyle = 'circle';
 
 
 
@@ -43,13 +48,7 @@ export default class Controller {
       perPixelTargetFind: false,
       containerClass: 'toy-editor-canvas-container',
     });
-    this.fabricInstance.add(new fabric.Rect({ 
-      left: 0, top: 0, width: ele.width - LINE_WIDTH, height: ele.height - LINE_WIDTH, 
-      stroke: 'rgba(255, 0, 0, 1)',
-      fill: 'rgba(0, 0, 0, 0)',
-      editable: false,
-      selection: false,
-    }));
+
     this.fabricInstance.on('object:modified', this.onObjectModified);
     // always show latest state
     this.fabricInstance.on('mouse:up', () => {
@@ -89,39 +88,48 @@ export default class Controller {
     const dt = e.dataTransfer;
     const { x, y } = getCoordinates(e, this.fabricInstance.lowerCanvasEl);
     const data = dt.getData('text/plain');
+    console.log('data', data);
     let object;
     try {
       object = JSON.parse(data);
     } catch (error) {
       console.error('failed to get the shape');
     }
-    if (!object || !object.type) {
+    if (!object || !object.toolType) {
       return;
     }
 
     const width = object.width / this.cssScale;
     const height = object.height / this.cssScale;
-    let radius;
-    if (object.radius) {
-      radius = object.radius / this.cssScale;
-    }
     
     const obj = {
       ...object,
       width,
       height,
-      radius,
       left: x - width/2,
       top: y - height/2,
-      editable: true,
+      flexible: true,
       id: generateUuid(),
+    };
+
+    let target;
+    if (object.toolType === TYPE_TEXT_BOX) {
+      target = new fabric.Textbox('这是一个文本输入框', obj);
+    } else if (object.toolType === TYPE_IMAGE_BOX) {
+      target = new fabric.Rect(obj);
+    } else {
+      console.error('未知的图形类型', obj);
+      return;
     }
-    this.addObject(obj);
+
+
+    this.fabricInstance.add(target);
+    this.update();
   }
 
   onObjectModified = (e: any) => {
     const { target } = e;
-    const {id, left, top, width, height, scaleX, scaleY, editable } = target;
+    const {id, left, top, width, height, scaleX, scaleY, flexible } = target;
     target.set({ scaleX: 1, scaleY: 1, width: scaleX * width, height: scaleY * height});
   
     let rule: any = this.ruleMap.get(id);  
@@ -136,29 +144,8 @@ export default class Controller {
     this.update();
   }
 
-
-
-  addObject(obj: any) {
-    const { type } = obj;
-    let target;  
-    switch(type) {
-      case 'rect':
-        target = new fabric.Rect(obj);
-        break;
-      case 'circle':
-        target = new fabric.Circle(obj)
-        break;
-    }
-    if (!target) {
-      return;
-    }
-
-    this.fabricInstance.add(target);
-    this.update();    
-  }
-
   getRuleLineList() {
-    const objects = this.fabricInstance.getObjects().filter(item => !!item.editable);
+    const objects = this.fabricInstance.getObjects().filter(item => !!item.flexible);
     this.ruleLineList = objects.map((item) => {
       const {id, left, top, width, height, scaleX, scaleY } = item;
       let rule: any;

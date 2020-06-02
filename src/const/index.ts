@@ -1,6 +1,6 @@
 
-export const INIT_WIDTH = 1600;
-export const INIT_HEIGHT = 900;
+export const INIT_WIDTH = 1200;
+export const INIT_HEIGHT = 300;
 
 
 
@@ -21,7 +21,6 @@ export const MIN_CANVAS_PIXEL_SIZE = 20;
 export const MAX_POS_VAL = 40000;
 export const MIN_POS_VAL = -MAX_POS_VAL;
 
-export const CROP_ZONE_ID = 'crop_zone_id';
 
 export const PRECISION_SCENE_RATIO = 0.001;
 
@@ -44,8 +43,8 @@ export const TYPE_TEXT_BOX = 'TEXT_BOX';
 export const TYPE_IMAGE_BOX = 'IMAGE_BOX';
 
 export const TOOL_IMAGE_ZONE = Object.freeze({
-  type: 'IMAGE_BOX',
-  name: '图像区',
+  toolType: 'IMAGE_BOX',
+  name: '图像区', 
   width: 150,
   height: 100,
   stroke: 'green',
@@ -54,11 +53,12 @@ export const TOOL_IMAGE_ZONE = Object.freeze({
 
 
 export const TOOL_TEXT_BOX = Object.freeze({
-  type: 'TEXT_BOX',
+  toolType: 'TEXT_BOX',
   name: '文本框区域',
   width: 300,
   height: 60,
   stroke: 'blue',
+  fill: 'rgba(255, 255, 255, 0)',
 });
 
 
