@@ -3,8 +3,13 @@ import classnames from 'classnames';
 import { Icon, Button, Input, InputNumber, Form, Row, Col, Radio } from 'antd';
 import styles from './index.module.less';
 import Controller from '../../controller';
-import { MIN_POS_VAL, MAX_POS_VAL, TEMPLATE_TYPE_NORMAL } from '../../const';
+import { 
+  MIN_POS_VAL, MAX_POS_VAL, TEMPLATE_TYPE_NORMAL,
+  FILL_TYPE_IMAGE, FILL_TYPE_COLOR,
+} from '../../const';
 import SpecRule from './spec-rule';
+
+import SAMPLE from '../../../assets/style_2_wave.jpeg';
 
 const FormItem = Form.Item;
 
@@ -29,7 +34,8 @@ export default class ImageLayerList extends React.Component<ImageLayerListProps>
   render() {
     const { className, style, controller } = this.props;
     const { width, height } = controller.getDimension();
-    const ruleLineList = controller.getRuleLineList();
+    const layerList = controller.getLayerList();
+    const { bgFillType } = controller;
 
 
     return (
@@ -64,13 +70,10 @@ export default class ImageLayerList extends React.Component<ImageLayerListProps>
             </Col>
           </Row>
           <FormItem labelCol={{ span: 6 }} wrapperCol={{ span: 18 }} label="模板名称">
-            <Input
-              
-            />
+            <Input />
           </FormItem>
           <FormItem labelCol={{ span: 6 }} wrapperCol={{ span: 18 }}  label="适用场景">
-            <Input     
-            />
+            <Input />
           </FormItem>
         </Form>
           
@@ -80,17 +83,43 @@ export default class ImageLayerList extends React.Component<ImageLayerListProps>
           背景设置
         </div>
         <div className={styles['list']}>
-          <Radio.Group defaultValue="a" buttonStyle="solid">
-            <Radio.Button value="a">指定素材</Radio.Button>
-            <Radio.Button value="b">填充颜色</Radio.Button>
+          <Radio.Group 
+            value={bgFillType} 
+            buttonStyle="solid"
+            onChange={(e) => {
+              controller.bgFillType = e.target.value;
+              this.forceUpdate();
+            }}
+          >
+            <Radio.Button value={FILL_TYPE_IMAGE}>指定素材</Radio.Button>
+            <Radio.Button value={FILL_TYPE_COLOR}>填充颜色</Radio.Button>
           </Radio.Group>
+          {
+            bgFillType === FILL_TYPE_IMAGE? (
+              <div className={styles.imgList}>
+                <div className={styles.imgItem} onClick={() => controller.setBgImage(SAMPLE)}>
+                  <img src={SAMPLE}/>
+                </div>
+              </div>
+            ): (
+              <div className={styles.colorList}>
+                <Button 
+                  style={{ background: 'green'}} 
+                  onClick={() => controller.setBgColor('green')}
+                >
+                  绿色
+                </Button>
+              </div>
+            )
+          }
+
         </div>
         <div className={styles['title']}>
           图层设置
         </div>
         <div className={styles['list']}>
           {
-            ruleLineList.map((rule) => <SpecRule key={rule.id} rule={rule} controller={controller}/>)
+            layerList.map((rule) => <SpecRule key={rule.id} rule={rule} controller={controller}/>)
           }
 
         </div>

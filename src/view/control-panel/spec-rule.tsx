@@ -8,13 +8,9 @@ import { MIN_POS_VAL, MAX_POS_VAL } from '../../const';
 
 const FormItem = Form.Item;
 
-const formLayout1 = {
-  labelCol: { span: 8 },
-  wrapperCol: { span: 24 },
-};
 
 const formLayout2 = {
-  labelCol: { span: 4 },
+  labelCol: { span: 6 },
   wrapperCol: { span: 16 },
 };
 
@@ -31,17 +27,48 @@ export default class SpecRule extends React.Component<any, any> {
 
   render() {
     const {rule, controller } = this.props;
-    const { name, description, x, y, w, h, id } = rule;
+    const { name, id } = rule;
+    const conf = rule.conf || {};
+    const { x, y, w, h, } = conf;
+
     const isActive = controller.isItemActive(id);
 
     return (
       <div className={classnames({[styles.rule]: true, [styles.active]: isActive}) }>
+        <div className={styles.fieldItem}>
+          <span className={styles.label}>类型: </span>
+          <span className={styles.value}>{name}</span>
+        </div>
         <Form >
-          <FormItem {...formLayout2} label="名称">
-            <Input value={name} onChange={(e:any) => this.onChange('name', e.target.value)}/>
+          <FormItem {...formLayout2} label="字体">
+            <Input 
+              value={name} 
+              onChange={(e:any) => this.onChange('name', e.target.value)}
+            />
           </FormItem>
-          <FormItem {...formLayout2} label="描述">
-            <Input.TextArea value={description} onChange={(e:any) => this.onChange('description', e.target.value)}/>
+          <FormItem {...formLayout2} label="大小">
+            <Input 
+              value={name} 
+              onChange={(e:any) => this.onChange('name', e.target.value)}
+            />
+          </FormItem>
+          <FormItem {...formLayout2} label="颜色">
+            <Input 
+              value={name} 
+              onChange={(e:any) => this.onChange('name', e.target.value)}
+            />
+          </FormItem>
+          <FormItem {...formLayout2} label="文本">
+            <Input 
+              value={name} 
+              onChange={(e:any) => this.onChange('name', e.target.value)}
+            />
+          </FormItem>
+          <FormItem {...formLayout2} label="最大字数">
+            <Input 
+              value={name} 
+              onChange={(e:any) => this.onChange('name', e.target.value)}
+            />
           </FormItem>
           <Row>
             <Col span={12}>

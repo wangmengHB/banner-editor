@@ -42,9 +42,12 @@ export const TEMPLATE_TYPE_TEMPLATE = 'template';
 export const TYPE_TEXT_BOX = 'TEXT_BOX';
 export const TYPE_IMAGE_BOX = 'IMAGE_BOX';
 
+export const FILL_TYPE_IMAGE = 'IMAGE';
+export const FILL_TYPE_COLOR = 'COLOR';
+
 export const TOOL_IMAGE_ZONE = Object.freeze({
   toolType: 'IMAGE_BOX',
-  name: '图像区', 
+  name: '图片区域', 
   width: 150,
   height: 100,
   stroke: 'green',
@@ -54,11 +57,15 @@ export const TOOL_IMAGE_ZONE = Object.freeze({
 
 export const TOOL_TEXT_BOX = Object.freeze({
   toolType: 'TEXT_BOX',
-  name: '文本框区域',
+  name: '文本框',
   width: 300,
   height: 60,
   stroke: 'blue',
-  fill: 'rgba(255, 255, 255, 0)',
+  fill: 'blue',
+  fontFamily: 'Comic Sans',
+  fontSize: 60,
+  text: '这是一个文本输入框',
+  maxLength: 9,
 });
 
 
