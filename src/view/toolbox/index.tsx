@@ -26,7 +26,6 @@ export default class Toolbox extends React.Component<ToolboxProps>{
     
     return (
       <div className={classnames([styles['toolbox-panel'], className])} style={style}>
-        <div className={styles['title']}>工具箱</div>
         <div className={styles['toolbox']}>
           {
             TOOL_LIST.map((shape, index) => <ToolItem shape={shape} key={shape.toolType || index} />)

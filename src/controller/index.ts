@@ -136,16 +136,11 @@ export default class Controller {
       preserveObjectStacking: true,
       enableRetinaScaling: false,
       perPixelTargetFind: false,
-      containerClass: 'toy-editor-canvas-container',
+      containerClass: 'banner-editor-canvas-container',
     });
 
-    this.fabricInstance.on('object:modified', this.onObjectModified);
-    // always show latest state
-    this.fabricInstance.on('mouse:up', () => {
-      if (this.cmp) {
-        this.cmp.forceUpdate();
-      }
-    });
+    this.fabricInstance.on('object:modified', this.update.bind(this));
+    this.fabricInstance.on('mouse:up', this.update.bind(this));
     this.limitMoveAndScale();
     (window as any)._f_ = this.fabricInstance;
   }
@@ -179,7 +174,6 @@ export default class Controller {
     const dt = e.dataTransfer;
     const { x, y } = getCoordinates(e, this.fabricInstance.lowerCanvasEl);
     const data = dt.getData('text/plain');
-    console.log('data', data);
     let object;
     try {
       object = JSON.parse(data);
@@ -204,11 +198,10 @@ export default class Controller {
 
     let target;
     if (object.toolType === TYPE_TEXT_BOX) {
-      target = new fabric.Textbox('这是一个文本输入框', obj);
-      console.log('textbox', obj);
 
+      target = new fabric.Textbox( obj.text || '这是一个文本输入框', {...obj, });
     } else if (object.toolType === TYPE_IMAGE_BOX) {
-      target = new fabric.LabelRect({...obj, label: '图片区'});
+      target = new fabric.LabelRect({...obj, label: '图片区域'});
     } else {
       console.error('未知的图形类型', obj);
       return;
@@ -218,53 +211,153 @@ export default class Controller {
     this.update();
   }
 
-  onObjectModified = (e: any) => {
-    const { target } = e;
-    const { width, height, scaleX, scaleY } = target;
-    target.set({ scaleX: 1, scaleY: 1, width: scaleX * width, height: scaleY * height});
-    // reset scale
-    target.width = width * scaleX;
-    target.height = height * scaleY;
-    this.update();
-  }
-
+  
   getLayerList() {
     const objects = this.fabricInstance.getObjects();
-    this.layerList = objects.map((item) => {
-      const { left, top, width, height, scaleX, scaleY } = item;
-      // TODO convert shape info into template info
-      const dims = this.getDimension();    
-      // update coordinates
-      item.conf = item.conf || {};
-      item.conf.x = left / (dims.width);
-      item.conf.y = top / (dims.height); 
-      item.conf.w = width * scaleX / (dims.width);
-      item.conf.h = height * scaleY / (dims.height);
-      return item;
-    })
-    return this.layerList; 
+    const list = objects.filter((item: any) => item.toolType === TYPE_IMAGE_BOX || item.toolType === TYPE_TEXT_BOX );
+    return list; 
   }
 
-  updateRule(item: any) {
-    const { id, x, y, w, h } = item;
-  
-    const objects = this.fabricInstance.getObjects();
-    const dims = this.getDimension();
-    objects.filter(sub => sub.id === id).forEach((obj: any) => {
-      obj.set({
-        left: x * dims.width,
-        top: y * dims.height,
-        width: w * dims.width,
-        height: h * dims.height,
-        scaleX: 1,
-        scaleY: 1,
-      });
-    })
+
+  updateTextBox(item, key, val) {
+    if (!item) {
+      return;
+    }
+    if ( key === 'stroke' ) {
+      item.set({ stroke: val, fill: val});
+    } else {
+      item.set(key, val);
+    }
     this.update();
   }
 
+
+  getReferenceImage(id) {
+    const objects = this.fabricInstance.getObjects();
+    const target = objects.find((item: any) => item.referenceId === id );
+    return target;
+  }
+
+
+  addOrReplaceImage(rect, url) {
+    const clipId = rect.id;
+    const image = this.getReferenceImage(clipId);
+    if (image) {
+      this.fabricInstance.remove(image);
+    }
+
+    const zIndex = this.fabricInstance.getObjects().findIndex((sub: any) => sub === rect);
+
+
+    fabric.util.loadImage(url, (img: any) => {
+      const { left, top, width, height, scaleX, scaleY } = rect; 
+      let oImg = new fabric.Image(img);
+      oImg.hasControls = false;
+      oImg.hasBorders = false;
+      let clipRect = new fabric.Rect({
+        left, top, width, height, scaleX, scaleY,
+        absolutePositioned: true,
+      });
+    
+
+      // TODO: do layout for the image input
+
+      oImg.set({
+        left: left,
+        top: top,
+        referenceId: clipId,
+        id: generateUuid(),
+        lockUniScaling: true,
+        lockRotation: true,
+        perPixelTargetFind: true,
+        selectable: false,
+        clipPath: clipRect,
+      });
+ 
+      this.fabricInstance.insertAt(oImg, zIndex);
+      this.bindImageBox(oImg, rect);
+      rect.actMode = "rect";
+      this.update();
+
+    });
+
+
+  }
+
+
+
   isItemActive(id: string) {
-    return !!this.fabricInstance.getActiveObjects().find(item => item.id === id);
+    return !!this.fabricInstance.getActiveObjects().find(item => item.id === id || item.referenceId === id );
+  }
+
+  changeActMode(rect: any, val: string) {
+    const { id } = rect;
+    const image = this.getReferenceImage(id);
+    if (!image) {
+      return;
+    }
+
+    debugger;
+    const rectIndex = this.fabricInstance.getObjects().findIndex((sub: any) => sub === rect);
+    const imageIndex = this.fabricInstance.getObjects().findIndex((sub: any) => sub === image);
+    
+    if (val === "rect" ) {
+      image.selectable = false;
+      rect.selectable = true;
+      rect.moveTo(imageIndex + 1);
+    } else if ( val === 'image') {
+      rect.selectable = false;
+      image.selectable = true;
+      image.moveTo(rectIndex + 1);
+    }
+
+    rect.actMode = val;
+    this.update();
+
+  }
+
+
+  bindImageBox(oImg, rect) {
+    rect.on('moving', (e) => {
+      console.log('move', e.target);
+      const { left, top, width, height, scaleX, scaleY } = rect;
+      // TODO find oImg
+      const clipPath = oImg.clipPath;
+      
+      let clipLeft = clipPath.left;
+      let clipTop = clipPath.top;
+  
+  
+      clipPath.set({ left, top});
+      let imgLeft = oImg.left;
+      let imgTop = oImg.top;
+  
+      oImg.set({
+        left: imgLeft + (left - clipLeft),  top: imgTop + (top - clipTop),
+      });
+    })
+  
+    rect.on('modified', () => {
+      console.log('modified');
+      const { left, top, width, height, scaleX, scaleY } = rect;
+      // TODO find oImg
+      const clipPath = oImg.clipPath;
+      let clipLeft = clipPath.left;
+      let clipTop = clipPath.top;
+      let imgLeft = oImg.left;
+      let imgTop = oImg.top;
+  
+      clipPath.set({ left, top, width, height, scaleX, scaleY});
+      oImg.clipPath = clipPath;
+      oImg.set({
+        left: imgLeft + (left - clipLeft), 
+        top: imgTop + (top - clipTop), 
+        scaleX: scaleX, 
+        scaleY: scaleX,
+      });
+    })
+
+
   }
 
 
@@ -273,11 +366,7 @@ export default class Controller {
 
   }
 
-  toSvg() {
-    return this.fabricInstance.toSvg();
-  }
-
-
+  
   update() {
     if (this.cmp && typeof this.cmp.forceUpdate === 'function') {
       this.cmp.forceUpdate();
@@ -322,38 +411,43 @@ export default class Controller {
 
 
   limitMoveAndScale() {
-    // this.fabricInstance.observe('object:scaling', function (e) {
-      
-    //   var obj = e.target;
-    //   if(obj.currentHeight > obj.canvas.height || obj.currentWidth > obj.canvas.width){
-    //     obj.setScaleY(obj.originalState.scaleY);
-    //     obj.setScaleX(obj.originalState.scaleX);        
-    //   }
-    //   obj.setCoords();
-    //   if(obj.getBoundingRect().top - (obj.cornerSize / 2) < 0 || 
-    //     obj.getBoundingRect().left -  (obj.cornerSize / 2) < 0) {
-    //     obj.top = Math.max(obj.top, obj.top-obj.getBoundingRect().top + (obj.cornerSize / 2));
-    //     obj.left = Math.max(obj.left, obj.left-obj.getBoundingRect().left + (obj.cornerSize / 2));    
-    //   }
-    //   if(obj.getBoundingRect().top+obj.getBoundingRect().height + obj.cornerSize  > obj.canvas.height || obj.getBoundingRect().left+obj.getBoundingRect().width + obj.cornerSize  > obj.canvas.width) {
-    
-    //     obj.top = Math.min(obj.top, obj.canvas.height-obj.getBoundingRect().height+obj.top-obj.getBoundingRect().top - obj.cornerSize / 2);
-    //     obj.left = Math.min(obj.left, obj.canvas.width-obj.getBoundingRect().width+obj.left-obj.getBoundingRect().left - obj.cornerSize /2);    
-    //   }
-    // });
-  
-    this.fabricInstance.observe('object:moving', function (e) {
-      var obj = e.target;
+    this.fabricInstance.observe('object:scaling', function (e) {
 
       // TODO: for exception case just return
-
-
+      if (obj.type === 'image') {
+        return;
+      }
+      
+      var obj = e.target;
+      if(obj.currentHeight > obj.canvas.height || obj.currentWidth > obj.canvas.width){
+        obj.setScaleY(obj.originalState.scaleY);
+        obj.setScaleX(obj.originalState.scaleX);        
+      }
+      obj.setCoords();
+      if(obj.getBoundingRect().top - (obj.cornerSize / 2) < 0 || 
+        obj.getBoundingRect().left -  (obj.cornerSize / 2) < 0) {
+        obj.top = Math.max(obj.top, obj.top-obj.getBoundingRect().top + (obj.cornerSize / 2));
+        obj.left = Math.max(obj.left, obj.left-obj.getBoundingRect().left + (obj.cornerSize / 2));    
+      }
+      if(obj.getBoundingRect().top+obj.getBoundingRect().height + obj.cornerSize  > obj.canvas.height || obj.getBoundingRect().left+obj.getBoundingRect().width + obj.cornerSize  > obj.canvas.width) {
+    
+        obj.top = Math.min(obj.top, obj.canvas.height-obj.getBoundingRect().height+obj.top-obj.getBoundingRect().top - obj.cornerSize / 2);
+        obj.left = Math.min(obj.left, obj.canvas.width-obj.getBoundingRect().width+obj.left-obj.getBoundingRect().left - obj.cornerSize /2);    
+      }
+    });
+  
+    this.fabricInstance.observe('object:moving', function (e) {
+      let obj = e.target;
+      // TODO: for exception case just return
+      if (obj.type === 'image') {
+        return;
+      }
       // if object is too big ignore
       if(obj.currentHeight > obj.canvas.height || obj.currentWidth > obj.canvas.width){
         return;
       }
       obj.setCoords();
-      // top-left  corner
+      // // top-left  corner
       if(obj.getBoundingRect().top < 0 || obj.getBoundingRect().left < 0){
         obj.top = Math.max(obj.top, obj.top-obj.getBoundingRect().top);
         obj.left = Math.max(obj.left, obj.left-obj.getBoundingRect().left);

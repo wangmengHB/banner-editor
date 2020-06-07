@@ -6,8 +6,10 @@ import Controller from '../../controller';
 import { 
   MIN_POS_VAL, MAX_POS_VAL, TEMPLATE_TYPE_NORMAL,
   FILL_TYPE_IMAGE, FILL_TYPE_COLOR,
+  TYPE_TEXT_BOX, TYPE_IMAGE_BOX,
 } from '../../const';
-import SpecRule from './spec-rule';
+import TextBox from './TextBox';
+import ImageBox from './ImageBox';
 
 import SAMPLE from '../../../assets/style_2_wave.jpeg';
 
@@ -24,7 +26,6 @@ export interface ImageLayerListProps{
   style?: React.CSSProperties;
   controller: Controller;
 }
-
 
 
 export default class ImageLayerList extends React.Component<ImageLayerListProps> {
@@ -119,7 +120,16 @@ export default class ImageLayerList extends React.Component<ImageLayerListProps>
         </div>
         <div className={styles['list']}>
           {
-            layerList.map((rule) => <SpecRule key={rule.id} rule={rule} controller={controller}/>)
+            layerList.map((layer) => {
+              const { toolType } = layer;
+              let tool = null;
+              if ( toolType === TYPE_TEXT_BOX ) {
+                tool = ( <TextBox key={layer.id} layer={layer} controller={controller}/> )
+              } else if ( toolType === TYPE_IMAGE_BOX ) {
+                tool = ( <ImageBox key={layer.id} layer={layer} controller={controller}/>)
+              }
+              return tool;
+            })
           }
 
         </div>

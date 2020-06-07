@@ -51,7 +51,7 @@ export const TOOL_IMAGE_ZONE = Object.freeze({
   width: 150,
   height: 100,
   stroke: 'green',
-  fill: 'rgba(255, 255, 255, 0)',
+  fill: 'rgba(0, 0, 0, 0.3)',
 });
 
 

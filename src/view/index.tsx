@@ -35,7 +35,7 @@ export default class ImageEditorView extends React.Component<ImageEditorProps, I
     
     return (
       <Spin spinning={false} tip="处理中...">
-        <div className={classnames([styles['toy-editor'], className])} style={style}>
+        <div className={classnames([styles['banner-editor'], className])} style={style}>
           <div className={styles['main']}>
             <ControlPanel 
               className={styles['control-panel']}
